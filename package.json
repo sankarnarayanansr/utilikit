@@ -1,6 +1,6 @@
 {
   "name": "utilikitjs",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A utility toolkit for parallel processing and HTTP utilities (usable in React)",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
