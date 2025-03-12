@@ -1262,12 +1262,92 @@ These methods are wrappers around `fetchWithCache` with the appropriate HTTP met
 
 ### ParallelUtils
 
-Utility class for parallel processing operations.
+# ParallelUtil
 
-#### Task and Result Types
+A utility class for running tasks in parallel using Web Workers (browser) or Worker Threads (Node.js).
+
+## Overview
+
+`ParallelUtil` enables efficient parallel processing by distributing tasks across multiple workers. It automatically detects the execution environment and uses the appropriate worker implementation.
+
+## Methods
+
+### `runParallel<T, R>(tasks: T[], workerFunction: (data: T) => R, numWorkers?: number): Promise<R[]>`
+
+Runs tasks in parallel using Web Workers or Node.js Worker Threads.
+
+**Parameters:**
+- `tasks`: Array of task data to be processed
+- `workerFunction`: Function to execute on each task
+- `numWorkers`: Number of parallel workers to use (defaults to hardware concurrency or 4)
+
+**Returns:**
+Promise resolving to array of results in the same order as input tasks
+
+**Examples:**
 
 ```typescript
-type Task<T, R> = (data: T) => R | Promise<R>;
-type TaskResult<R> = {
-  result: R;
-  
+// Process array of data in parallel
+const data = [1, 2, 3, 4, 5];
+const results = await ParallelUtil.runParallel(data, (num) => {
+  return num * num; // Square each number
+});
+console.log(results); // [1, 4, 9, 16, 25]
+```
+
+```typescript
+// Image processing with multiple workers
+const imageData = [buffer1, buffer2, buffer3];
+const processedImages = await ParallelUtil.runParallel(
+  imageData,
+  (buffer) => applyImageFilter(buffer),
+  navigator.hardwareConcurrency
+);
+```
+
+### `computeAsync<T, R>(computation: (data: T) => R, data: T): Promise<R>`
+
+Executes a single heavy task asynchronously.
+
+**Parameters:**
+- `computation`: Function to execute on the data
+- `data`: Input data for the computation
+
+**Returns:**
+Promise resolving to the result of the computation
+
+**Examples:**
+
+```typescript
+// Execute CPU-intensive calculation without blocking the main thread
+const result = await ParallelUtil.computeAsync((data) => {
+  // Perform expensive calculation
+  return fibonacci(data);
+}, 42);
+```
+
+```typescript
+// Process large dataset in background
+const processedData = await ParallelUtil.computeAsync((rawData) => {
+  // Transform or analyze the data
+  return rawData.map(item => transform(item)).filter(item => validate(item));
+}, largeDataset);
+```
+
+## Private Methods
+
+### `isWebWorkerSupported(): boolean`
+
+Detects if the environment supports Web Workers.
+
+**Returns:**
+Boolean indicating if Web Workers are available
+
+### `runParallelWithWebWorker<T, R>(tasks: T[], workerFunction: (data: T) => R, numWorkers: number): Promise<R[]>`
+
+Runs tasks in parallel using Web Workers (for browser environments).
+
+### `runParallelWithNodeWorker<T, R>(tasks: T[], workerFunction: (data: T) => R, numWorkers: number): Promise<R[]>`
+
+Runs tasks in parallel using Node.js Worker Threads (for Node.js environments).
+

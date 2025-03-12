@@ -16,9 +16,14 @@ type ParallelResult<R> = {
     taskId: string;
 };
 
+/**
+ * Utility class for executing tasks in parallel across multiple workers
+ * Supports both browser Web Workers and Node.js Worker Threads
+ */
 export class ParallelUtil {
     /**
      * Detect if environment supports Web Workers
+     * @returns Boolean indicating if Web Workers are available
      */
     private static isWebWorkerSupported(): boolean {
         return typeof window !== 'undefined' && typeof Worker !== 'undefined';
@@ -26,6 +31,27 @@ export class ParallelUtil {
 
     /**
      * Runs tasks in parallel using Web Workers or Node.js Worker Threads
+     * @param tasks Array of task data to be processed
+     * @param workerFunction Function to execute on each task
+     * @param numWorkers Number of parallel workers to use (defaults to hardware concurrency or 4)
+     * @returns Promise resolving to array of results in the same order as input tasks
+     * 
+     * @example
+     * // Process array of data in parallel
+     * const data = [1, 2, 3, 4, 5];
+     * const results = await ParallelUtil.runParallel(data, (num) => {
+     *   return num * num; // Square each number
+     * });
+     * console.log(results); // [1, 4, 9, 16, 25]
+     * 
+     * @example
+     * // Image processing with multiple workers
+     * const imageData = [buffer1, buffer2, buffer3];
+     * const processedImages = await ParallelUtil.runParallel(
+     *   imageData,
+     *   (buffer) => applyImageFilter(buffer),
+     *   navigator.hardwareConcurrency
+     * );
      */
     static async runParallel<T, R>(
         tasks: T[],
@@ -40,6 +66,12 @@ export class ParallelUtil {
 
     /**
      * Runs tasks in parallel using Web Workers (for browser)
+     * @param tasks Array of task data to be processed
+     * @param workerFunction Function to execute on each task
+     * @param numWorkers Number of parallel workers to use
+     * @returns Promise resolving to array of results in the same order as input tasks
+     * 
+     * @private
      */
     private static async runParallelWithWebWorker<T, R>(
         tasks: T[],
@@ -79,6 +111,12 @@ export class ParallelUtil {
 
     /**
      * Runs tasks in parallel using Node.js Worker Threads
+     * @param tasks Array of task data to be processed
+     * @param workerFunction Function to execute on each task
+     * @param numWorkers Number of parallel workers to use
+     * @returns Promise resolving to array of results in the same order as input tasks
+     * 
+     * @private
      */
     private static async runParallelWithNodeWorker<T, R>(
         tasks: T[],
@@ -113,6 +151,23 @@ export class ParallelUtil {
 
     /**
      * Executes a single heavy task asynchronously
+     * @param computation Function to execute on the data
+     * @param data Input data for the computation
+     * @returns Promise resolving to the result of the computation
+     * 
+     * @example
+     * // Execute CPU-intensive calculation without blocking the main thread
+     * const result = await ParallelUtil.computeAsync((data) => {
+     *   // Perform expensive calculation
+     *   return fibonacci(data);
+     * }, 42);
+     * 
+     * @example
+     * // Process large dataset in background
+     * const processedData = await ParallelUtil.computeAsync((rawData) => {
+     *   // Transform or analyze the data
+     *   return rawData.map(item => transform(item)).filter(item => validate(item));
+     * }, largeDataset);
      */
     static async computeAsync<T, R>(
         computation: (data: T) => R,
